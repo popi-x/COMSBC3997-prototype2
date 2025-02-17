@@ -1,6 +1,7 @@
 // Variables
-float birdY, birdVelocity, gravity;
+float birdX,birdY, birdVelocity, gravity;
 float pipeWidth, pipeGap, pipeX, pipeHeight;
+float invincibleTime;
 int score;
 boolean gameOver;
 int gameState;
@@ -8,10 +9,12 @@ boolean gravityInverted;
 
 float triangleX, triangleY;
 float triangleSpeed = 3;
-boolean showTriangle;
+boolean showTriangle, isInvincible;
 
 void setup() {
-  size(400, 600);
+  size(1000, 600);
+  invincibleTime = -1;
+  birdX = 300;
   birdY = height / 2;
   birdVelocity = 0;
   gravity = 0.6;
@@ -24,6 +27,7 @@ void setup() {
   gameState = 0;
   gravityInverted = false;
   showTriangle = false;
+  isInvincible = false;
 }
 
 void draw() {
@@ -40,12 +44,9 @@ void draw() {
   
   // When game is active
   else if (gameState == 1){
-    birdVelocity += (gravityInverted ? -gravity : gravity);
-    birdY += birdVelocity;
-    fill(255, 204, 0);
+   
     noStroke();
-    ellipse(100, birdY, 30, 30);
-
+    
     // Pipe Movement
     pipeX -= 3;
     if (pipeX < -pipeWidth) {
@@ -54,7 +55,7 @@ void draw() {
       score++;
     
       // Controls frequency and placement of triangle spawn
-      showTriangle = random(1) < 0.3;
+      showTriangle = random(1) < 0.4;
       if(showTriangle){
         triangleX = width + 30;
         triangleY = pipeHeight + pipeGap / 2;
@@ -78,12 +79,35 @@ void draw() {
       fill(255, 0, 0);
       triangle(triangleX - 15, triangleY + 15, triangleX + 15, triangleY + 15, triangleX, triangleY - 15);
       
-      if(dist(100, birdY, triangleX, triangleY) < 30) {
+      if(dist(birdX, birdY, triangleX, triangleY) < 30) {
+        invincibleTime = millis();
         gravityInverted = !gravityInverted;
         showTriangle = false;
+        isInvincible = true;
       }
     }
+    
+    birdVelocity += (gravityInverted ? -gravity : gravity);
+    birdY += birdVelocity;
+    
+    if (isInvincible){
+      if (millis() - invincibleTime >= 8000){
+        isInvincible = false;
+        invincibleTime = -1;
+      }
+      else{
+        fill(255);
+        ellipse(birdX, birdY, 30, 30);
+      }
+    }
+    else {
+      fill(255, 204, 0);
+      noStroke();
+      ellipse(birdX, birdY, 30, 30);
+    }
 
+    
+    
     // Score Display
     fill(255);
     textSize(32);
@@ -93,13 +117,25 @@ void draw() {
     if (
       birdY > height || 
       birdY < 0 || 
-      (100 > pipeX && 100 < pipeX + pipeWidth && 
+      (birdX > pipeX && birdX < pipeX + pipeWidth && 
       (birdY < pipeHeight || birdY > pipeHeight + pipeGap))
     ) {
-      gameOver = true;
-      gameState = 2;
+      if (isInvincible){
+        birdVelocity = 0;
+        birdY = height/2;
+        fill(255);
+        ellipse(birdX, birdY, 30, 30);
+        isInvincible = false;
+      }
+      else{
+        gameOver = true;
+        gameState = 2;
+      }
+     
     }
-
+   
+   
+    
  }
  
  // Game Over text
@@ -142,4 +178,6 @@ void resetGame(){
   gameOver = false;
   gravityInverted = false;
   showTriangle = false;
+  invincibleTime = -1;
+  isInvincible = false;
 }
