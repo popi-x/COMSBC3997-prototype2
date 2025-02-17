@@ -9,7 +9,9 @@ boolean gravityInverted;
 
 float triangleX, triangleY;
 float triangleSpeed = 3;
-boolean showTriangle, isInvincible;
+boolean showTriangle, isInvincible, isBroken;
+
+ArrayList<Particle> particles = new ArrayList<Particle>();
 
 void setup() {
   size(1000, 600);
@@ -28,6 +30,7 @@ void setup() {
   gravityInverted = false;
   showTriangle = false;
   isInvincible = false;
+  isBroken = false;
 }
 
 void draw() {
@@ -47,95 +50,110 @@ void draw() {
    
     noStroke();
     
-    // Pipe Movement
-    pipeX -= 3;
-    if (pipeX < -pipeWidth) {
-      pipeX = width;
-      pipeHeight = random(50, 300);
-      score++;
+    if (!isBroken){
+       // Pipe Movement
+      pipeX -= 3;
+      if (pipeX < -pipeWidth) {
+        pipeX = width;
+        pipeHeight = random(50, 300);
+        score++;
     
-      // Controls frequency and placement of triangle spawn
-      showTriangle = random(1) < 0.4;
-      if(showTriangle){
-        triangleX = width + 30;
-        triangleY = pipeHeight + pipeGap / 2;
-      }  
-    }
+        // Controls frequency and placement of triangle spawn
+        showTriangle = random(1) < 0.4;
+        if(showTriangle){
+          triangleX = width + 30;
+          triangleY = pipeHeight + pipeGap / 2;
+        }  
+      }
   
-    // Triangle movement
-    if(showTriangle){
-      triangleX -= triangleSpeed;
-    }
+      // Triangle movement
+      if(showTriangle){
+        triangleX -= triangleSpeed;
+      }
 
-    // Upper Pipe
-    fill(34, 139, 34);
-    rect(pipeX, 0, pipeWidth, pipeHeight);
+      // Upper Pipe
+      fill(34, 139, 34);
+      rect(pipeX, 0, pipeWidth, pipeHeight);
 
-    // Lower Pipe
-    rect(pipeX, pipeHeight + pipeGap, pipeWidth, height);
+      // Lower Pipe
+      rect(pipeX, pipeHeight + pipeGap, pipeWidth, height);
     
-    // Triangle Dimensions and collision detection
-    if (showTriangle){
-      fill(255, 0, 0);
-      triangle(triangleX - 15, triangleY + 15, triangleX + 15, triangleY + 15, triangleX, triangleY - 15);
+      // Triangle Dimensions and collision detection
+      if (showTriangle){
+        fill(255, 0, 0);
+        triangle(triangleX - 15, triangleY + 15, triangleX + 15, triangleY + 15, triangleX, triangleY - 15);
       
-      if(dist(birdX, birdY, triangleX, triangleY) < 30) {
-        invincibleTime = millis();
-        gravityInverted = !gravityInverted;
-        showTriangle = false;
-        isInvincible = true;
-      }
-    }
-    
-    birdVelocity += (gravityInverted ? -gravity : gravity);
-    birdY += birdVelocity;
-    
-    if (isInvincible){
-      if (millis() - invincibleTime >= 8000){
-        isInvincible = false;
-        invincibleTime = -1;
-      }
-      else{
-        fill(255);
-        ellipse(birdX, birdY, 30, 30);
-      }
-    }
-    else {
-      fill(255, 204, 0);
-      noStroke();
-      ellipse(birdX, birdY, 30, 30);
-    }
+        if(dist(birdX, birdY, triangleX, triangleY) < 30) {
+          invincibleTime = millis();
+          gravityInverted = !gravityInverted;
+          showTriangle = false;
+          isInvincible = true;
+        }
+      }  
 
-    
-    
-    // Score Display
-    fill(255);
-    textSize(32);
-    text(score, width - 50, 50);
-
-    // Collision Detection with screen and pipes
-    if (
-      birdY > height || 
-      birdY < 0 || 
-      (birdX > pipeX && birdX < pipeX + pipeWidth && 
-      (birdY < pipeHeight || birdY > pipeHeight + pipeGap))
-    ) {
+      birdVelocity += (gravityInverted ? -gravity : gravity);
+      birdY += birdVelocity;
+      
       if (isInvincible){
-        birdVelocity = 0;
-        birdY = height/2;
-        fill(255);
-        ellipse(birdX, birdY, 30, 30);
-        isInvincible = false;
+        if (millis() - invincibleTime >= 8000){
+          isInvincible = false;
+          invincibleTime = -1;
+        }
+        else{
+          fill(255);
+          ellipse(birdX, birdY, 30, 30);
+        }
       }
       else{
-        gameOver = true;
-        gameState = 2;
+        fill(255, 204, 0);
+        noStroke();
+        ellipse(birdX, birdY, 30, 30);
       }
-     
-    }
-   
-   
     
+
+    
+    
+      // Score Display
+      fill(255);
+      textSize(32);
+      text(score, width - 50, 50);
+  
+      // Collision Detection with screen and pipes
+      if (
+        birdY > height || 
+        birdY < 0 || 
+        (birdX > pipeX && birdX < pipeX + pipeWidth && 
+        (birdY < pipeHeight || birdY > pipeHeight + pipeGap))
+      ) {
+        if (isInvincible){
+          birdVelocity = 0;
+          birdY = height/2;
+          fill(255);
+          ellipse(birdX, birdY, 30, 30);
+          isInvincible = false;
+        }
+        else{
+          isBroken = true;
+          explode(birdX, birdY);
+          
+          //gameOver = true;
+          //gameState = 2;
+        }
+       
+      }
+    }
+    if (isBroken){
+      for (int i=particles.size()-1; i>=0; i--){
+          Particle p = particles.get(i);
+          p.update();
+          p.display();
+          if (p.life <= 0){
+            particles.remove(i);     
+            gameOver = true;
+            gameState = 2;
+          }
+        }
+    }
  }
  
  // Game Over text
@@ -180,4 +198,39 @@ void resetGame(){
   showTriangle = false;
   invincibleTime = -1;
   isInvincible = false;
+  isBroken = false;
+}
+
+
+class Particle{
+  float x,y,vx,vy,life;
+  
+  Particle(float x, float y){
+    this.x = x;
+    this.y = y;
+    this.vx = random(-3, 3);
+    this.vy = random(-3, 3);
+    this.life = 255;
+   }
+   
+  void update(){
+    x += vx;
+    y += vy;
+    vy += 0.1;
+    life -= 5;
+  }
+  
+  void display() {
+    fill(255, 100, 0, life);
+    noStroke();
+    ellipse(x, y, 5, 5);
+  }
+ 
+
+}
+
+void explode(float x, float y) {
+  for (int i = 0; i < 20; i++) {
+    particles.add(new Particle(x, y));
+  }
 }
