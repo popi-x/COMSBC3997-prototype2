@@ -1,0 +1,8 @@
+Press the Spacebar to start the game
+Press the Spacebar to jump through the pipes
+When the player eats the red triangle, gravity will invert and there will be 8 seconds of
+invincibility.
+Also when gravity is inverted the spacebar will be pressed to make the player "fall"
+The game ends when the player crashes into the pipes or the floor or the ceiling and there is
+a death particle effect.
+Press Space to restart the game.
